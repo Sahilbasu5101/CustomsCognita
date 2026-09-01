@@ -1,0 +1,2019 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CustomsCognita — Autonomous Freight Compliance</title>
+  <style>
+    :root {
+      --bg: #050811;
+      --bg2: #070c18;
+      --cyan: #00f0ff;
+      --cyan-dim: rgba(0, 240, 255, 0.55);
+      --cyan-faint: rgba(0, 240, 255, 0.12);
+      --green: #00e87a;
+      --text: #fafbfd;
+      --text-soft: rgba(121, 125, 133, 0.7);
+      --text-bright: #dfe3ea;
+      --text-dim: rgba(183, 188, 198, 0.58);
+      --border: rgba(0, 240, 255, 0.12);
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    html {
+      scroll-behavior: auto;
+    }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Helvetica Neue", "Inter", sans-serif;
+      -webkit-font-smoothing: antialiased;
+      overflow-x: hidden;
+    }
+
+    /* ── loader ── */
+    #loader {
+      position: fixed;
+      inset: 0;
+      z-index: 200;
+      background: var(--bg);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 32px;
+      transition: opacity 0.9s ease;
+    }
+
+    #loader.done {
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    #loader .logo-mark {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    #loader .node-icon {
+      width: 28px;
+      height: 28px;
+      position: relative;
+      flex-shrink: 0;
+    }
+
+    #loader .node-icon svg {
+      width: 100%;
+      height: 100%;
+    }
+
+    #loader .brand-name {
+      font-size: 13px;
+      letter-spacing: 0.45em;
+      text-indent: 0.45em;
+      color: var(--cyan);
+      text-transform: uppercase;
+      font-weight: 500;
+    }
+
+    #loader .bar {
+      width: 200px;
+      height: 1px;
+      background: rgba(0, 240, 255, 0.15);
+      overflow: hidden;
+      position: relative;
+    }
+
+    #loader .bar i {
+      position: absolute;
+      left: 0;
+      top: 0;
+      bottom: 0;
+      width: 0%;
+      background: var(--cyan);
+      display: block;
+      transition: width 0.2s ease;
+    }
+
+    #loader .load-label {
+      font-size: 10px;
+      letter-spacing: 0.3em;
+      text-transform: uppercase;
+      color: var(--text-dim);
+    }
+
+    /* ── scroll stage ── */
+    #track {
+      height: 900vh;
+      position: relative;
+    }
+
+    #stage {
+      position: sticky;
+      top: 0;
+      height: 100vh;
+      width: 100%;
+      overflow: hidden;
+    }
+
+    #film {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      display: block;
+    }
+
+    #vignette {
+      position: absolute;
+      inset: 0;
+      z-index: 5;
+      pointer-events: none;
+      background:
+        radial-gradient(ellipse 65% 70% at 50% 50%, transparent 48%, rgba(5, 8, 17, 0.88) 94%),
+        linear-gradient(to right, rgba(5, 8, 17, 0.92), transparent 16%, transparent 84%, rgba(5, 8, 17, 0.92)),
+        linear-gradient(to bottom, rgba(5, 8, 17, 0.6), transparent 12%, transparent 88%, rgba(5, 8, 17, 0.95));
+    }
+
+    /* ── captions ── */
+    .caption {
+      position: absolute;
+      z-index: 10;
+      opacity: 0;
+      pointer-events: none;
+      will-change: opacity, transform;
+    }
+
+    .caption h1 {
+      font-size: clamp(38px, 6vw, 86px);
+      font-weight: 700;
+      letter-spacing: -0.025em;
+      line-height: 1.0;
+      text-transform: uppercase;
+      text-shadow: 0 2px 16px rgba(0, 0, 0, 0.9);
+    }
+
+    .caption h2 {
+      font-size: clamp(24px, 3.4vw, 52px);
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      line-height: 1.05;
+      text-transform: uppercase;
+      text-shadow: 0 2px 16px rgba(0, 0, 0, 0.9);
+    }
+
+    .caption p {
+      margin-top: 14px;
+      font-size: clamp(13px, 1.2vw, 17px);
+      color: var(--text-bright);
+      font-weight: 400;
+      letter-spacing: 0.04em;
+      max-width: 36ch;
+      line-height: 1.6;
+      text-shadow: 0 2px 12px rgba(0, 0, 0, 0.95);
+    }
+
+    .caption .tag {
+      display: inline-block;
+      font-size: 10px;
+      letter-spacing: 0.35em;
+      text-transform: uppercase;
+      color: var(--cyan);
+      margin-bottom: 12px;
+      border: 1px solid var(--border);
+      border-radius: 100px;
+      padding: 4px 14px;
+      background: rgba(5, 8, 17, 0.4);
+    }
+
+    .caption .cyan {
+      color: var(--cyan);
+    }
+
+    .caption .green {
+      color: var(--green);
+    }
+
+    .caption .red {
+      color: #ff3860;
+    }
+
+    /* ── Hero Ch1 Screenshot Style ── */
+    .hero-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 12px;
+      font-weight: 500;
+      letter-spacing: 0.02em;
+      color: #38bdf8;
+      background: rgba(56, 189, 248, 0.08);
+      border: 1px solid rgba(56, 189, 248, 0.25);
+      border-radius: 100px;
+      padding: 6px 18px;
+      margin-bottom: 22px;
+    }
+
+    .hero-pill-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: #38bdf8;
+      box-shadow: 0 0 8px #38bdf8;
+      display: inline-block;
+    }
+
+    .hero-title {
+      font-size: clamp(42px, 6.2vw, 96px);
+      font-weight: 800;
+      letter-spacing: -0.04em;
+      line-height: 0.94;
+      text-transform: uppercase;
+      color: #ffffff;
+      margin: 0;
+      text-align: left;
+      display: block;
+    }
+
+    .hero-cyan {
+      display: inline-block;
+      background: linear-gradient(90deg, #38bdf8 0%, #60a5fa 40%, #a78bfa 90%);
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+      filter: drop-shadow(0 0 16px rgba(56, 189, 248, 0.35));
+    }
+
+    .hero-sub {
+      margin-top: 24px;
+      font-size: clamp(14px, 1.15vw, 16px);
+      color: rgba(232, 237, 245, 0.72);
+      font-weight: 400;
+      max-width: 38ch;
+      line-height: 1.65;
+      margin-left: 0;
+      margin-right: 0;
+      text-align: left;
+    }
+
+    .hero-btns {
+      display: flex;
+      align-items: center;
+      justify-content: flex-start;
+      gap: 16px;
+      margin-top: 18px;
+      pointer-events: auto;
+    }
+
+    .hero-btn-primary {
+      padding: 13px 30px;
+      border-radius: 100px;
+      background: linear-gradient(135deg, #00b8ff, #6366f1);
+      color: var(--text-bright);
+      font-size: 14px;
+      font-weight: 700;
+      text-decoration: none;
+      box-shadow: 0 0 28px rgba(0, 184, 255, 0.35);
+      transition: transform 0.2s, box-shadow 0.2s;
+    }
+
+    .hero-btn-primary:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 0 40px rgba(0, 184, 255, 0.55);
+    }
+
+    .hero-btn-ghost {
+      padding: 13px 30px;
+      border-radius: 100px;
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      color: var(--text-bright);
+      font-size: 14px;
+      font-weight: 600;
+      text-decoration: none;
+      transition: background 0.2s, border-color 0.2s;
+    }
+
+    .hero-btn-ghost:hover {
+      background: rgba(255, 255, 255, 0.1);
+      border-color: rgba(255, 255, 255, 0.3);
+    }
+
+    .cap-center {
+      left: 50%;
+      top: 50%;
+      transform: translate(-50%, -50%);
+      text-align: center;
+    }
+
+    .cap-center p {
+      margin-left: auto;
+      margin-right: auto;
+    }
+
+    .cap-left {
+      left: 7vw;
+      top: 50%;
+      transform: translateY(-50%);
+    }
+
+    .cap-right {
+      right: 7vw;
+      top: 50%;
+      transform: translateY(-50%);
+      text-align: right;
+    }
+
+    .cap-right p {
+      margin-left: auto;
+    }
+
+    .cap-top {
+      left: 50%;
+      top: 12vh;
+      transform: translateX(-50%);
+      text-align: center;
+    }
+
+    .cap-bottom {
+      left: 50%;
+      bottom: 10vh;
+      transform: translateX(-50%);
+      text-align: center;
+    }
+
+    /* ── scroll cue ── */
+    #scroll-cue {
+      position: absolute;
+      bottom: 4.5vh;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 10;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 10px;
+      color: var(--text-dim);
+      font-size: 11px;
+      letter-spacing: 0.35em;
+      text-indent: 0.35em;
+      text-transform: uppercase;
+      transition: opacity 0.5s ease;
+    }
+
+    #scroll-cue::after {
+      content: "";
+      width: 1px;
+      height: 34px;
+      background: linear-gradient(to bottom, var(--cyan), transparent);
+      animation: cue 1.8s ease-in-out infinite;
+    }
+
+    @keyframes cue {
+
+      0%,
+      100% {
+        transform: translateY(0);
+        opacity: 1;
+      }
+
+      50% {
+        transform: translateY(8px);
+        opacity: 0.4;
+      }
+    }
+
+    /* ── final CTA ── */
+    .cta {
+      margin-top: 24px;
+      pointer-events: auto;
+      display: inline-block;
+      padding: 14px 38px;
+      border: none;
+      border-radius: 100px;
+      background: linear-gradient(135deg, #00b8ff, #00f0ff);
+      color: #050811;
+      text-decoration: none;
+      font-size: 13px;
+      font-weight: 700;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      box-shadow: 0 0 28px rgba(0, 240, 255, 0.5);
+      transition: transform 0.2s, box-shadow 0.2s;
+    }
+
+    .cta:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 0 44px rgba(0, 240, 255, 0.8);
+      color: #050811;
+      box-shadow: 0 0 36px rgba(0, 240, 255, 0.55);
+    }
+
+    /* ════════════════════════════════
+     BRAND PAGE — sticky nav
+  ════════════════════════════════ */
+    #brandnav {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      z-index: 80;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 16px 4vw;
+      background: color-mix(in srgb, var(--bg) 80%, transparent);
+      backdrop-filter: blur(16px);
+      border-bottom: 1px solid transparent;
+      opacity: 0;
+      pointer-events: none;
+      transform: translateY(-10px);
+      transition: opacity 0.4s ease, transform 0.4s ease, border-color 0.4s ease;
+    }
+
+    #brandnav.on {
+      opacity: 1;
+      pointer-events: auto;
+      transform: none;
+      border-color: var(--border);
+    }
+
+    #brandnav .nav-logo {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      text-decoration: none;
+    }
+
+    #brandnav .nav-logo .dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--cyan);
+      box-shadow: 0 0 8px var(--cyan);
+      animation: pulse-dot 2s ease-in-out infinite;
+    }
+
+    @keyframes pulse-dot {
+
+      0%,
+      100% {
+        box-shadow: 0 0 8px var(--cyan);
+        opacity: 1;
+      }
+
+      50% {
+        box-shadow: 0 0 16px var(--cyan);
+        opacity: 0.7;
+      }
+    }
+
+    #brandnav .nav-brand {
+      letter-spacing: 0.35em;
+      text-indent: 0.35em;
+      font-size: 12px;
+      color: var(--cyan);
+      text-transform: uppercase;
+      font-weight: 600;
+    }
+
+    #brandnav .links {
+      display: flex;
+      gap: 2.2vw;
+      align-items: center;
+    }
+
+    #brandnav .links a {
+      color: var(--text-dim);
+      text-decoration: none;
+      font-size: 11px;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      transition: color 0.25s;
+    }
+
+    #brandnav .links a:hover {
+      color: var(--text);
+    }
+
+    #brandnav .navcta {
+      border: 1px solid var(--cyan);
+      border-radius: 100px;
+      padding: 7px 20px;
+      color: var(--cyan);
+      font-size: 11px;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      text-decoration: none;
+      transition: background 0.25s, color 0.25s;
+    }
+
+    #brandnav .navcta:hover {
+      background: var(--cyan);
+      color: var(--bg);
+    }
+
+    /* ════════════════════════════════
+     BRAND PAGE — shared section chrome
+  ════════════════════════════════ */
+    .bp {
+      position: relative;
+      padding: 14vh 7vw;
+      max-width: 1500px;
+      margin: 0 auto;
+    }
+
+    .bp .kicker {
+      font-size: 10px;
+      letter-spacing: 0.4em;
+      text-transform: uppercase;
+      color: var(--cyan);
+      margin-bottom: 18px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .bp .kicker::before {
+      content: "";
+      display: block;
+      width: 28px;
+      height: 1px;
+      background: var(--cyan);
+    }
+
+    .bp h2 {
+      font-weight: 700;
+      letter-spacing: -0.03em;
+      line-height: 1.0;
+      font-size: clamp(32px, 4.2vw, 64px);
+      text-transform: uppercase;
+    }
+
+    .bp p.lead {
+      color: var(--text-dim);
+      font-size: clamp(14px, 1.2vw, 17px);
+      line-height: 1.75;
+      max-width: 46ch;
+      margin-top: 20px;
+    }
+
+    /* reveal */
+    [data-reveal] {
+      opacity: 0;
+      transform: translateY(28px);
+      transition: opacity 0.85s cubic-bezier(.2, .6, .2, 1), transform 0.85s cubic-bezier(.2, .6, .2, 1);
+    }
+
+    [data-reveal].in {
+      opacity: 1;
+      transform: none;
+    }
+
+    [data-reveal][data-delay="1"] {
+      transition-delay: 0.1s;
+    }
+
+    [data-reveal][data-delay="2"] {
+      transition-delay: 0.2s;
+    }
+
+    [data-reveal][data-delay="3"] {
+      transition-delay: 0.3s;
+    }
+
+    [data-reveal][data-delay="4"] {
+      transition-delay: 0.4s;
+    }
+
+    /* split layout */
+    .bp-split {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 6vw;
+      align-items: center;
+    }
+
+    .bp-split.flip> :first-child {
+      order: 2;
+    }
+
+    @media (max-width: 800px) {
+      .bp-split {
+        grid-template-columns: 1fr;
+      }
+
+      .bp-split.flip> :first-child {
+        order: 0;
+      }
+    }
+
+    /* manifesto */
+    .bp-manifesto {
+      text-align: center;
+      padding: 20vh 7vw;
+    }
+
+    .bp-manifesto h2 {
+      font-size: clamp(38px, 6.5vw, 100px);
+      max-width: 18ch;
+      margin: 0 auto;
+      line-height: 1.0;
+    }
+
+    /* ── bento grid ── */
+    .bp-bento {
+      display: grid;
+      grid-template-columns: repeat(12, 1fr);
+      gap: 16px;
+      margin-top: 60px;
+    }
+
+    .bento-card {
+      background: linear-gradient(135deg, rgba(0, 240, 255, 0.04), rgba(5, 8, 17, 0.8));
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 36px 32px;
+      position: relative;
+      overflow: hidden;
+      transition: border-color 0.3s ease, box-shadow 0.3s ease;
+    }
+
+    .bento-card:hover {
+      border-color: rgba(0, 240, 255, 0.3);
+      box-shadow: 0 0 40px rgba(0, 240, 255, 0.06);
+    }
+
+    .bento-card::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      border-radius: 16px;
+      background: radial-gradient(circle at 20% 20%, rgba(0, 240, 255, 0.06) 0%, transparent 60%);
+      pointer-events: none;
+    }
+
+    .bento-card .bc-icon {
+      font-size: 24px;
+      margin-bottom: 20px;
+      display: block;
+    }
+
+    .bento-card .bc-num {
+      font-size: clamp(36px, 3.5vw, 56px);
+      font-weight: 700;
+      letter-spacing: -0.03em;
+      color: var(--cyan);
+      line-height: 1;
+      margin-bottom: 8px;
+    }
+
+    .bento-card .bc-label {
+      font-size: 11px;
+      letter-spacing: 0.3em;
+      text-transform: uppercase;
+      color: var(--text-dim);
+      margin-bottom: 14px;
+    }
+
+    .bento-card .bc-body {
+      font-size: clamp(13px, 1.1vw, 15px);
+      color: var(--text-dim);
+      line-height: 1.65;
+    }
+
+    .bento-card h3 {
+      font-size: clamp(16px, 1.6vw, 22px);
+      font-weight: 700;
+      letter-spacing: -0.01em;
+      margin-bottom: 10px;
+      color: var(--text);
+    }
+
+    .bento-card .bc-badge {
+      display: inline-block;
+      background: rgba(0, 232, 122, 0.12);
+      color: var(--green);
+      font-size: 9px;
+      letter-spacing: 0.25em;
+      text-transform: uppercase;
+      padding: 3px 10px;
+      border-radius: 100px;
+      border: 1px solid rgba(0, 232, 122, 0.25);
+      margin-bottom: 12px;
+    }
+
+    .bc-span7 {
+      grid-column: span 7;
+    }
+
+    .bc-span5 {
+      grid-column: span 5;
+    }
+
+    .bc-span6 {
+      grid-column: span 6;
+    }
+
+    .bc-span4 {
+      grid-column: span 4;
+    }
+
+    @media (max-width: 900px) {
+
+      .bc-span7,
+      .bc-span5,
+      .bc-span6,
+      .bc-span4 {
+        grid-column: span 12;
+      }
+    }
+
+    /* ── rule playground ── */
+    .bp-playground {
+      background: rgba(0, 240, 255, 0.02);
+      border-top: 1px solid var(--border);
+      border-bottom: 1px solid var(--border);
+    }
+
+    .playground-wrap {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 40px;
+      margin-top: 50px;
+    }
+
+    @media (max-width: 800px) {
+      .playground-wrap {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .pg-controls {
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+
+    .pg-field label {
+      display: block;
+      font-size: 10px;
+      letter-spacing: 0.3em;
+      text-transform: uppercase;
+      color: var(--text-dim);
+      margin-bottom: 8px;
+    }
+
+    .pg-field input[type="number"],
+    .pg-field select {
+      width: 100%;
+      padding: 12px 16px;
+      background: rgba(0, 240, 255, 0.04);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      color: var(--text);
+      font-size: 14px;
+      font-family: monospace;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+
+    .pg-field input:focus,
+    .pg-field select:focus {
+      border-color: rgba(0, 240, 255, 0.4);
+    }
+
+    .pg-field select option {
+      background: var(--bg2);
+    }
+
+    .pg-field input[type="range"] {
+      width: 100%;
+      accent-color: var(--cyan);
+      cursor: pointer;
+      height: 4px;
+    }
+
+    .range-row {
+      display: flex;
+      justify-content: space-between;
+      margin-top: 4px;
+    }
+
+    .range-row span {
+      font-size: 11px;
+      color: var(--text-dim);
+      font-family: monospace;
+    }
+
+    .pg-output {
+      background: rgba(5, 8, 17, 0.8);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 24px;
+      font-family: monospace;
+      font-size: 13px;
+      min-height: 360px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .pg-output::before {
+      content: "● RULES ENGINE v3.1.4 — LIVE";
+      display: block;
+      font-size: 9px;
+      letter-spacing: 0.25em;
+      color: var(--cyan);
+      margin-bottom: 20px;
+      padding-bottom: 12px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .pg-line {
+      margin-bottom: 8px;
+      line-height: 1.5;
+    }
+
+    .pg-line .ok {
+      color: var(--green);
+    }
+
+    .pg-line .warn {
+      color: #f0a500;
+    }
+
+    .pg-line .err {
+      color: #ff3860;
+    }
+
+    .pg-line .dim {
+      color: var(--text-dim);
+    }
+
+    .pg-verdict {
+      margin-top: 20px;
+      padding: 16px;
+      border-radius: 8px;
+      font-size: 12px;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      border: 1px solid;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .pg-verdict.pass {
+      border-color: rgba(0, 232, 122, 0.4);
+      background: rgba(0, 232, 122, 0.07);
+      color: var(--green);
+    }
+
+    .pg-verdict.fail {
+      border-color: rgba(255, 56, 96, 0.4);
+      background: rgba(255, 56, 96, 0.07);
+      color: #ff3860;
+    }
+
+    .pg-verdict.warn {
+      border-color: rgba(240, 165, 0, 0.4);
+      background: rgba(240, 165, 0, 0.07);
+      color: #f0a500;
+    }
+
+    .pg-verdict .conf {
+      font-size: 11px;
+      opacity: 0.8;
+    }
+
+    /* ── architecture ── */
+    .arch-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 20px;
+      margin-top: 50px;
+    }
+
+    .arch-card {
+      background: rgba(0, 240, 255, 0.03);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 28px 24px;
+      transition: border-color 0.3s ease;
+    }
+
+    .arch-card:hover {
+      border-color: rgba(0, 240, 255, 0.25);
+    }
+
+    .arch-card .arch-layer {
+      font-size: 9px;
+      letter-spacing: 0.3em;
+      text-transform: uppercase;
+      color: var(--cyan);
+      margin-bottom: 12px;
+    }
+
+    .arch-card h4 {
+      font-size: 16px;
+      font-weight: 700;
+      letter-spacing: -0.01em;
+      margin-bottom: 8px;
+    }
+
+    .arch-card p {
+      font-size: 12px;
+      color: var(--text-dim);
+      line-height: 1.6;
+    }
+
+    .arch-card .tech-pills {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-top: 14px;
+    }
+
+    .tech-pill {
+      font-size: 9px;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: var(--cyan);
+      background: var(--cyan-faint);
+      border: 1px solid rgba(0, 240, 255, 0.2);
+      border-radius: 100px;
+      padding: 3px 10px;
+    }
+
+    /* ── stats strip ── */
+    .bp-stats {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 6vw;
+      text-align: center;
+      padding: 14vh 7vw;
+      border-top: 1px solid var(--border);
+      border-bottom: 1px solid var(--border);
+      max-width: 100%;
+    }
+
+    .bp-stats .stat {}
+
+    .bp-stats .num {
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      font-size: clamp(42px, 5.5vw, 80px);
+      color: var(--cyan);
+      line-height: 1;
+    }
+
+    .bp-stats .unit {
+      font-size: 0.5em;
+      color: var(--cyan-dim);
+      vertical-align: super;
+    }
+
+    .bp-stats .lbl {
+      margin-top: 8px;
+      font-size: 10px;
+      letter-spacing: 0.3em;
+      text-transform: uppercase;
+      color: var(--text-dim);
+    }
+
+    /* ── closing CTA ── */
+    .bp-ctaband {
+      text-align: center;
+      padding: 18vh 7vw;
+      position: relative;
+    }
+
+    .bp-ctaband::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: radial-gradient(ellipse 60% 60% at 50% 50%, rgba(0, 240, 255, 0.04), transparent);
+      pointer-events: none;
+    }
+
+    .bp-ctaband h2 {
+      max-width: 20ch;
+      margin: 0 auto;
+    }
+
+    .email-form {
+      display: flex;
+      gap: 0;
+      margin-top: 40px;
+      max-width: 480px;
+      margin-left: auto;
+      margin-right: auto;
+      border: 1px solid var(--border);
+      border-radius: 100px;
+      overflow: hidden;
+      transition: border-color 0.3s;
+    }
+
+    .email-form:focus-within {
+      border-color: rgba(0, 240, 255, 0.4);
+    }
+
+    .email-form input {
+      flex: 1;
+      padding: 14px 24px;
+      background: transparent;
+      border: none;
+      outline: none;
+      color: var(--text);
+      font-size: 13px;
+      font-family: inherit;
+    }
+
+    .email-form input::placeholder {
+      color: var(--text-dim);
+    }
+
+    .email-form button {
+      padding: 14px 28px;
+      background: var(--cyan);
+      border: none;
+      color: var(--bg);
+      font-size: 11px;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      font-weight: 700;
+      cursor: pointer;
+      font-family: inherit;
+      transition: box-shadow 0.3s;
+      border-radius: 0 100px 100px 0;
+      flex-shrink: 0;
+    }
+
+    .email-form button:hover {
+      box-shadow: 0 0 24px rgba(0, 240, 255, 0.4);
+    }
+
+    /* ── footer ── */
+    footer.bp-footer {
+      border-top: 1px solid var(--border);
+      padding: 8vh 7vw 5vh;
+    }
+
+    .bp-footer .cols {
+      display: grid;
+      grid-template-columns: 2fr repeat(3, 1fr);
+      gap: 5vw;
+      max-width: 1500px;
+      margin: 0 auto;
+    }
+
+    @media (max-width: 800px) {
+      .bp-footer .cols {
+        grid-template-columns: 1fr 1fr;
+        gap: 40px;
+      }
+    }
+
+    .bp-footer h4 {
+      font-size: 9px;
+      letter-spacing: 0.35em;
+      text-transform: uppercase;
+      color: var(--text-dim);
+      margin-bottom: 18px;
+    }
+
+    .bp-footer a {
+      display: block;
+      color: var(--text-dim);
+      text-decoration: none;
+      font-size: 13px;
+      margin-bottom: 10px;
+      transition: color 0.2s;
+    }
+
+    .bp-footer a:hover {
+      color: var(--text);
+    }
+
+    .bp-footer .fine {
+      margin-top: 7vh;
+      text-align: center;
+      font-size: 10px;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: color-mix(in srgb, var(--text) 25%, transparent);
+    }
+
+    .bp-footer .status-bar {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 20px;
+      margin-top: 20px;
+      padding: 10px 24px;
+      border: 1px solid var(--border);
+      border-radius: 100px;
+      width: fit-content;
+      margin-left: auto;
+      margin-right: auto;
+      font-size: 10px;
+      letter-spacing: 0.2em;
+      color: var(--text-dim);
+    }
+
+    .bp-footer .status-bar .dot-green {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: var(--green);
+      box-shadow: 0 0 6px var(--green);
+      flex-shrink: 0;
+      animation: pulse-dot 2s ease-in-out infinite;
+    }
+
+    /* diagonal separator */
+    .diag-sep {
+      width: 100%;
+      height: 1px;
+      background: linear-gradient(to right, transparent, var(--border), transparent);
+      margin: 0;
+    }
+
+    /* ── Top permanent header ── */
+    #topnav {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      z-index: 300;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 3vw;
+      height: 60px;
+      background: rgba(6, 10, 18, 0.9);
+      backdrop-filter: blur(18px);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    }
+
+    .topnav-logo {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      text-decoration: none;
+      flex-shrink: 0;
+    }
+
+    .topnav-brand {
+      font-size: 15px;
+      font-weight: 700;
+      letter-spacing: -0.01em;
+      color: #edf6ff;
+    }
+
+    .topnav-links {
+      display: flex;
+      align-items: center;
+      gap: 2vw;
+    }
+
+    .topnav-links a {
+      color: rgba(236, 242, 255, 0.82);
+      text-decoration: none;
+      font-size: 13px;
+      letter-spacing: 0.01em;
+      transition: color 0.2s ease;
+    }
+
+    .topnav-links a:hover {
+      color: #ffffff;
+    }
+
+    .topnav-actions {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      flex-shrink: 0;
+    }
+
+    .topnav-login {
+      color: rgba(236, 242, 255, 0.82);
+      text-decoration: none;
+      font-size: 13px;
+      transition: color 0.2s ease;
+    }
+
+    .topnav-login:hover {
+      color: #ffffff;
+    }
+
+    .topnav-cta {
+      display: inline-flex;
+      align-items: center;
+      padding: 9px 20px;
+      border-radius: 12px;
+      background: linear-gradient(135deg, #1ab7ff, #48d1ff);
+      color: #06111a;
+      text-decoration: none;
+      font-size: 13px;
+      font-weight: 700;
+      letter-spacing: 0.01em;
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+      box-shadow: 0 0 18px rgba(74, 202, 255, 0.45);
+    }
+
+    .topnav-cta:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 0 28px rgba(74, 202, 255, 0.65);
+    }
+
+    @media (max-width: 700px) {
+      .topnav-links {
+        display: none;
+      }
+
+      .topnav-login {
+        display: none;
+      }
+    }
+
+    /* ── New CTA band (full-width, dark centered) ── */
+    .bp-ctaband-full {
+      text-align: center;
+      padding: 18vh 7vw 20vh;
+      position: relative;
+      background: var(--bg);
+      border-top: 1px solid var(--border);
+    }
+
+    .bp-ctaband-full::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: radial-gradient(ellipse 55% 70% at 50% 50%, rgba(0, 240, 255, 0.05), transparent);
+      pointer-events: none;
+    }
+
+    .ctaband-inner {
+      position: relative;
+      z-index: 1;
+    }
+
+    .ctaband-eyebrow {
+      font-size: 10px;
+      letter-spacing: 0.4em;
+      text-transform: uppercase;
+      color: var(--cyan);
+      margin-bottom: 24px;
+      display: block;
+    }
+
+    .ctaband-heading {
+      font-size: clamp(36px, 6vw, 88px);
+      font-weight: 800;
+      letter-spacing: -0.03em;
+      line-height: 1.0;
+      color: var(--text);
+      margin: 0 auto;
+      max-width: 14ch;
+    }
+
+    .ctaband-sub {
+      margin-top: 20px;
+      font-size: clamp(14px, 1.2vw, 17px);
+      color: var(--text-dim);
+      line-height: 1.7;
+    }
+
+    .ctaband-btns {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 16px;
+      margin-top: 36px;
+      flex-wrap: wrap;
+    }
+
+    .ctabtn-primary {
+      display: inline-flex;
+      align-items: center;
+      padding: 14px 32px;
+      border-radius: 10px;
+      background: linear-gradient(135deg, #00b8ff, #00f0ff);
+      color: var(--bg);
+      text-decoration: none;
+      font-size: 15px;
+      font-weight: 700;
+      box-shadow: 0 0 28px rgba(0, 240, 255, 0.3);
+      transition: box-shadow 0.3s, transform 0.2s;
+    }
+
+    .ctabtn-primary:hover {
+      box-shadow: 0 0 44px rgba(0, 240, 255, 0.5);
+      transform: translateY(-2px);
+    }
+
+    .ctabtn-ghost {
+      display: inline-flex;
+      align-items: center;
+      padding: 14px 32px;
+      border-radius: 10px;
+      border: 1px solid rgba(232, 237, 245, 0.15);
+      color: var(--text);
+      text-decoration: none;
+      font-size: 15px;
+      font-weight: 500;
+      transition: border-color 0.2s, background 0.2s;
+      background: rgba(232, 237, 245, 0.04);
+    }
+
+    .ctabtn-ghost:hover {
+      border-color: rgba(232, 237, 245, 0.3);
+      background: rgba(232, 237, 245, 0.08);
+    }
+
+    .email-form-inline {
+      display: flex;
+      gap: 0;
+      max-width: 460px;
+      margin-left: auto;
+      margin-right: auto;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      overflow: hidden;
+      transition: border-color 0.3s;
+    }
+
+    .email-form-inline:focus-within {
+      border-color: rgba(0, 240, 255, 0.4);
+    }
+
+    .email-form-inline input {
+      flex: 1;
+      padding: 14px 20px;
+      background: rgba(0, 240, 255, 0.03);
+      border: none;
+      outline: none;
+      color: var(--text);
+      font-size: 13px;
+      font-family: inherit;
+    }
+
+    .email-form-inline input::placeholder {
+      color: var(--text-dim);
+    }
+
+    .email-form-inline button {
+      padding: 14px 24px;
+      background: var(--cyan);
+      border: none;
+      color: var(--bg);
+      font-size: 12px;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      font-weight: 700;
+      cursor: pointer;
+      font-family: inherit;
+      flex-shrink: 0;
+      transition: box-shadow 0.3s;
+    }
+
+    .email-form-inline button:hover {
+      box-shadow: inset 0 0 20px rgba(0, 0, 0, 0.1);
+    }
+
+    /* ── New footer ── */
+    .bp-footer-full {
+      background: var(--bg2);
+      border-top: 1px solid var(--border);
+      padding: 8vh 6vw 0;
+    }
+
+    .footer-top {
+      display: grid;
+      grid-template-columns: 1.6fr 2fr;
+      gap: 6vw;
+      max-width: 1400px;
+      margin: 0 auto;
+      padding-bottom: 7vh;
+      border-bottom: 1px solid var(--border);
+    }
+
+    @media (max-width: 800px) {
+      .footer-top {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .footer-logo {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 16px;
+    }
+
+    .footer-logo span {
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--cyan);
+      letter-spacing: -0.01em;
+    }
+
+    .footer-tagline {
+      font-size: 13px;
+      color: var(--text-dim);
+      line-height: 1.7;
+      max-width: 28ch;
+    }
+
+    .footer-status {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-top: 20px;
+      font-size: 11px;
+      color: var(--text-dim);
+      letter-spacing: 0.05em;
+    }
+
+    .footer-status .sep {
+      opacity: 0.4;
+    }
+
+    .footer-links-wrap {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 3vw;
+    }
+
+    @media (max-width: 600px) {
+      .footer-links-wrap {
+        grid-template-columns: 1fr 1fr;
+      }
+    }
+
+    .footer-col h4 {
+      font-size: 10px;
+      letter-spacing: 0.3em;
+      text-transform: uppercase;
+      color: var(--text-dim);
+      margin-bottom: 16px;
+    }
+
+    .footer-col a {
+      display: block;
+      color: var(--text-dim);
+      text-decoration: none;
+      font-size: 14px;
+      margin-bottom: 10px;
+      transition: color 0.2s;
+    }
+
+    .footer-col a:hover {
+      color: var(--text);
+    }
+
+    .footer-bottom {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 12px;
+      max-width: 1400px;
+      margin: 0 auto;
+      padding: 3vh 0 4vh;
+      font-size: 12px;
+      color: color-mix(in srgb, var(--text) 30%, transparent);
+    }
+
+    .footer-bottom-links {
+      display: flex;
+      gap: 24px;
+    }
+
+    .footer-bottom-links a {
+      color: color-mix(in srgb, var(--text) 35%, transparent);
+      text-decoration: none;
+      font-size: 12px;
+      transition: color 0.2s;
+    }
+
+    .footer-bottom-links a:hover {
+      color: var(--text-dim);
+    }
+  </style>
+</head>
+
+<body style="padding-top:58px;">
+  <!-- ══════════════════ TOP HEADER ══════════════════ -->
+  <header id="topnav">
+    <a href="#" class="topnav-logo">
+      <svg width="22" height="22" viewBox="0 0 28 28" fill="none" aria-hidden="true">
+        <circle cx="14" cy="14" r="4" fill="#7dd3fc" />
+        <circle cx="14" cy="14" r="10" stroke="#7dd3fc" stroke-width="1" opacity="0.35" />
+        <line x1="14" y1="2" x2="14" y2="8" stroke="#7dd3fc" stroke-width="1.2" opacity="0.5" />
+        <line x1="14" y1="20" x2="14" y2="26" stroke="#7dd3fc" stroke-width="1.2" opacity="0.5" />
+        <line x1="2" y1="14" x2="8" y2="14" stroke="#7dd3fc" stroke-width="1.2" opacity="0.5" />
+        <line x1="20" y1="14" x2="26" y2="14" stroke="#7dd3fc" stroke-width="1.2" opacity="0.5" />
+      </svg>
+      <span class="topnav-brand">CustomsCognita</span>
+    </a>
+    <nav class="topnav-links" aria-label="Main navigation">
+      <a href="#features">Features</a>
+      <a href="#how-it-works">How It Works</a>
+      <a href="#demo">Demo</a>
+      <a href="#testimonials">Testimonials</a>
+    </nav>
+    <div class="topnav-actions">
+      <a href="#login" class="topnav-login">Login</a>
+      <a href="#reserve" class="topnav-cta">Get Started →</a>
+    </div>
+  </header>
+
+  <!-- ══════════════════ LOADER ══════════════════ -->
+  <div id="loader">
+    <div class="logo-mark">
+      <div class="node-icon">
+        <svg viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <circle cx="14" cy="14" r="4" fill="#00f0ff" />
+          <circle cx="14" cy="14" r="4" fill="#00f0ff" opacity="0.4">
+            <animate attributeName="r" values="4;10;4" dur="2s" repeatCount="indefinite" />
+            <animate attributeName="opacity" values="0.4;0;0.4" dur="2s" repeatCount="indefinite" />
+          </circle>
+          <line x1="14" y1="2" x2="14" y2="8" stroke="#00f0ff" stroke-width="1" opacity="0.5" />
+          <line x1="14" y1="20" x2="14" y2="26" stroke="#00f0ff" stroke-width="1" opacity="0.5" />
+          <line x1="2" y1="14" x2="8" y2="14" stroke="#00f0ff" stroke-width="1" opacity="0.5" />
+          <line x1="20" y1="14" x2="26" y2="14" stroke="#00f0ff" stroke-width="1" opacity="0.5" />
+          <line x1="5.5" y1="5.5" x2="9.5" y2="9.5" stroke="#00f0ff" stroke-width="1" opacity="0.3" />
+          <line x1="18.5" y1="18.5" x2="22.5" y2="22.5" stroke="#00f0ff" stroke-width="1" opacity="0.3" />
+          <line x1="22.5" y1="5.5" x2="18.5" y2="9.5" stroke="#00f0ff" stroke-width="1" opacity="0.3" />
+          <line x1="5.5" y1="22.5" x2="9.5" y2="18.5" stroke="#00f0ff" stroke-width="1" opacity="0.3" />
+        </svg>
+      </div>
+      <span class="brand-name">CustomsCognita</span>
+    </div>
+    <div class="bar"><i id="loadbar"></i></div>
+    <span class="load-label">Initialising compliance engine</span>
+  </div>
+
+  <!-- ══════════════════ FILM TRACK ══════════════════ -->
+  <div id="track">
+    <div id="stage">
+      <canvas id="film"></canvas>
+      <div id="vignette"></div>
+
+      <!-- Ch 0: Opening Hero (ch1: 0.000 -> 0.141) -->
+      <div class="caption cap-left" data-in="-0.05" data-hold="0.02" data-out="0.10"
+        style="width:44%; max-width:620px; left:5vw; text-align:left;">
+        <div class="hero-pill"><span class="hero-pill-dot"></span> AI-Powered · Real-time · Sovereign Compliant</div>
+        <h1 class="hero-title">
+          <span>Next-Gen</span><br>
+          <span>Global Customs,</span><br>
+          <span class="hero-cyan">Intelligence</span><br>
+        </h1>
+        <p class="hero-sub">
+          Automate customs verification and document reconciliation to move shipments faster with zero errors.
+        </p>
+        <div class="hero-btns">
+          <a class="hero-btn-primary" href="#engine">See it live ↓</a>
+          <a class="hero-btn-ghost" href="#story">Explore features</a>
+        </div>
+      </div>
+
+      <!-- Ch 1: Document ingestion (ch2: 0.141 -> 0.253) -->
+      <div class="caption cap-right" data-in="0.14" data-hold="0.19" data-out="0.24">
+        <div class="tag">Ingestion Layer</div>
+        <h2>Multimodal<br><span class="cyan">Ingestion.</span></h2>
+        <p>Every field extracted at <span class="cyan">99.4% confidence</span> — invoices, packing lists, bills of
+          lading, simultaneously.</p>
+      </div>
+
+      <!-- Ch 2: Cross-doc reconciliation (ch3: 0.253 -> 0.365) -->
+      <div class="caption cap-left" data-in="0.25" data-hold="0.30" data-out="0.35">
+        <div class="tag">Reconciliation</div>
+        <h2>Discrepancies<br><span class="red">caught</span> before<br>embarkation.</h2>
+        <p>Cross-document neural matrix aligns every declared field — flags mismatches in real time.</p>
+      </div>
+
+      <!-- Ch 3: Rule engine (ch4: 0.365 -> 0.506) -->
+      <div class="caption cap-right" data-in="0.37" data-hold="0.43" data-out="0.49">
+        <div class="tag">Compliance Engine</div>
+        <h2>Zero<br><span class="cyan">hallucinations.</span></h2>
+        <p>Deterministic versioned rules decide compliance. LLMs extract — the rules engine decides.</p>
+      </div>
+
+      <!-- Ch 4: Clearance (ch5: 0.506 -> 0.647) -->
+      <div class="caption cap-left" data-in="0.51" data-hold="0.57" data-out="0.63">
+        <div class="tag">Clearance</div>
+        <h2>Customs<br><span class="green">cleared.</span><br>Audit-ready.</h2>
+        <p>Cryptographic clearance seal. Full immutable audit trail for every declaration.</p>
+      </div>
+
+      <!-- Ch 5: Global Trade Network (ch6 at 0.845→1.0 — caption at 0.86–1.0) -->
+      <div class="caption cap-bottom" data-in="0.85" data-hold="0.92" data-out="1.1">
+        <h1>CustomsCognita</h1>
+        <p>Autonomous freight compliance, at scale across global corridors.</p>
+        <a class="cta" href="#story">Explore the platform</a>
+      </div>
+
+      <div id="scroll-cue">Scroll</div>
+    </div>
+  </div>
+
+  <!-- ══════════════════ STICKY NAV ══════════════════ -->
+  <nav id="brandnav" class="on">
+    <a href="#story" class="nav-logo">
+      <div class="dot"></div>
+      <span class="nav-brand">CustomsCognita</span>
+    </a>
+    <a class="navcta" href="#reserve">Book Pilot</a>
+  </nav>
+
+  <!-- ══════════════════ § 1 MANIFESTO ══════════════════ -->
+  <section class="bp bp-manifesto" id="story">
+    <div data-reveal>
+      <p class="kicker" style="justify-content:center; margin-bottom:28px;">CustomsCognita</p>
+      <h2>Engineered for sovereign compliance.</h2>
+    </div>
+  </section>
+
+  <div class="diag-sep"></div>
+
+  <!-- ══════════════════ § 2 ORIGIN ══════════════════ -->
+  <section class="bp">
+    <div class="bp-split">
+      <div data-reveal>
+        <p class="kicker">Origin</p>
+        <h2>Why the world's freight keeps getting stuck.</h2>
+        <p class="lead">Cross-border trade runs on documents. Those documents are inconsistent, handcrafted, and
+          unverified — until now. CustomsCognita was built to replace the grey area with machine certainty.</p>
+        <p class="lead" style="margin-top:12px;">Built by engineers who spent years watching \$2M shipments held at port
+          over a one-field discrepancy.</p>
+      </div>
+      <!-- Procedural SVG illustration -->
+      <div data-reveal data-delay="2" style="position:relative;">
+        <div
+          style="width:100%;aspect-ratio:4/3;background:rgba(0,240,255,0.03);border:1px solid var(--border);border-radius:16px;display:flex;align-items:center;justify-content:center;overflow:hidden;position:relative;">
+          <svg width="90%" height="90%" viewBox="0 0 400 300" fill="none" xmlns="http://www.w3.org/2000/svg"
+            style="opacity:0.8">
+            <!-- Container outline -->
+            <rect x="120" y="80" width="160" height="100" rx="3" stroke="#00f0ff" stroke-width="1"
+              stroke-dasharray="4 4" />
+            <!-- Grid lines on container -->
+            <line x1="160" y1="80" x2="160" y2="180" stroke="#00f0ff" stroke-width="0.5" opacity="0.3" />
+            <line x1="200" y1="80" x2="200" y2="180" stroke="#00f0ff" stroke-width="0.5" opacity="0.3" />
+            <line x1="240" y1="80" x2="240" y2="180" stroke="#00f0ff" stroke-width="0.5" opacity="0.3" />
+            <line x1="120" y1="113" x2="280" y2="113" stroke="#00f0ff" stroke-width="0.5" opacity="0.3" />
+            <line x1="120" y1="146" x2="280" y2="146" stroke="#00f0ff" stroke-width="0.5" opacity="0.3" />
+            <!-- Laser lines -->
+            <line x1="80" y1="130" x2="320" y2="130" stroke="#00f0ff" stroke-width="1" opacity="0.6" />
+            <!-- Status dot -->
+            <circle cx="200" cy="130" r="6" fill="#00f0ff" opacity="0.9" />
+            <circle cx="200" cy="130" r="14" stroke="#00f0ff" stroke-width="1" opacity="0.3" />
+            <!-- Data fields -->
+            <rect x="30" y="200" width="80" height="50" rx="4" stroke="#00f0ff" stroke-width="0.8"
+              fill="rgba(0,240,255,0.03)" />
+            <rect x="160" y="210" width="80" height="40" rx="4" stroke="#00f0ff" stroke-width="0.8"
+              fill="rgba(0,240,255,0.03)" />
+            <rect x="290" y="200" width="80" height="50" rx="4" stroke="#00f0ff" stroke-width="0.8"
+              fill="rgba(0,240,255,0.03)" />
+            <!-- Connectors -->
+            <line x1="70" y1="200" x2="120" y2="180" stroke="#00f0ff" stroke-width="0.6" opacity="0.4" />
+            <line x1="200" y1="210" x2="200" y2="180" stroke="#00f0ff" stroke-width="0.6" opacity="0.4" />
+            <line x1="330" y1="200" x2="280" y2="180" stroke="#00f0ff" stroke-width="0.6" opacity="0.4" />
+            <!-- Doc labels -->
+            <text x="70" y="220" text-anchor="middle" font-family="monospace" font-size="6" fill="#00f0ff"
+              opacity="0.7">INVOICE</text>
+            <text x="200" y="228" text-anchor="middle" font-family="monospace" font-size="6" fill="#00f0ff"
+              opacity="0.7">B / L</text>
+            <text x="330" y="220" text-anchor="middle" font-family="monospace" font-size="6" fill="#00f0ff"
+              opacity="0.7">PKG LIST</text>
+            <!-- Top label -->
+            <text x="200" y="60" text-anchor="middle" font-family="monospace" font-size="8" fill="#00f0ff"
+              opacity="0.5">MULTIMODAL INGESTION ENGINE</text>
+            <line x1="100" y1="65" x2="155" y2="65" stroke="#00f0ff" stroke-width="0.5" opacity="0.4" />
+            <line x1="245" y1="65" x2="300" y2="65" stroke="#00f0ff" stroke-width="0.5" opacity="0.4" />
+          </svg>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ══════════════════ § 3 BENTO GRID ══════════════════ -->
+  <section class="bp" id="architecture" style="padding-top:6vh;">
+    <div data-reveal>
+      <p class="kicker">Platform</p>
+      <h2>Four pillars.<br>Zero gaps.</h2>
+    </div>
+
+    <div class="bp-bento">
+      <div class="bento-card bc-span7" data-reveal data-delay="1">
+        <span class="bc-icon">⚡</span>
+        <div class="bc-num">500<span class="unit">ms</span></div>
+        <div class="bc-label">Sub-Second Ingestion</div>
+        <div class="bc-body">Live OCR + Vision pipeline processes a full commercial invoice — including all line items —
+          in under 500ms. BullMQ workers scale horizontally on burst traffic.</div>
+      </div>
+      <div class="bento-card bc-span5" data-reveal data-delay="2">
+        <span class="bc-icon">🔒</span>
+        <div class="bc-badge">Core Differentiator</div>
+        <h3>100% Deterministic Engine</h3>
+        <div class="bc-body">LLMs extract. Versioned Business Rules Engines decide compliance — not probabilistic
+          inference. Every verdict is traceable to a specific rule version and regulatory source.</div>
+      </div>
+      <div class="bento-card bc-span5" data-reveal data-delay="3">
+        <span class="bc-icon">📋</span>
+        <h3>Immutable Audit Ledger</h3>
+        <div class="bc-body">Every ingestion event, rule evaluation, and clearance decision is written to an append-only
+          audit log. Full chain-of-custody for customs authorities — inspection-ready on demand.</div>
+      </div>
+      <div class="bento-card bc-span7" data-reveal data-delay="4">
+        <span class="bc-icon">🌐</span>
+        <div class="bc-num">12</div>
+        <div class="bc-label">Active Trade Corridors</div>
+        <div class="bc-body">Live support for India–EU (ICS2 / TARIC), ASEAN corridors, and US CBP frameworks. Rule
+          libraries are versioned independently per corridor — a regulatory update in TARIC never touches your India
+          workflow.</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ══════════════════ § 4 RULE PLAYGROUND ══════════════════ -->
+  <section class="bp bp-playground" id="engine">
+    <div data-reveal>
+      <p class="kicker">Interactive Demo</p>
+      <h2>The rule engine.<br><span style="color:var(--cyan)">Live.</span></h2>
+      <p class="lead">Adjust shipment variables and watch the deterministic rules engine evaluate compliance in real
+        time — exactly as it runs in production.</p>
+    </div>
+
+    <div class="playground-wrap" data-reveal data-delay="2">
+      <div class="pg-controls">
+        <div class="pg-field">
+          <label>Invoice Quantity (units)</label>
+          <input type="number" id="pg-inv-qty" value="500" min="1" max="9999" oninput="runEngine()">
+        </div>
+        <div class="pg-field">
+          <label>Packing List Quantity (units)</label>
+          <input type="number" id="pg-pl-qty" value="500" min="1" max="9999" oninput="runEngine()">
+        </div>
+        <div class="pg-field">
+          <label>Invoice Value (USD)</label>
+          <input type="number" id="pg-value" value="24500" min="1" oninput="runEngine()">
+        </div>
+        <div class="pg-field">
+          <label>HS Code</label>
+          <select id="pg-hs" onchange="runEngine()">
+            <option value="8471.30">8471.30 — Laptops / Portable Computers</option>
+            <option value="6403.99">6403.99 — Footwear (leather)</option>
+            <option value="2204.21">2204.21 — Wine (bottled)</option>
+            <option value="8708.99">8708.99 — Auto Parts</option>
+            <option value="3004.90">3004.90 — Pharmaceuticals</option>
+          </select>
+        </div>
+        <div class="pg-field">
+          <label>Declared Weight (kg) — <span id="weight-val">340</span></label>
+          <input type="range" id="pg-weight" min="10" max="1000" value="340"
+            oninput="document.getElementById('weight-val').textContent=this.value; runEngine()">
+          <div class="range-row"><span>10 kg</span><span>1000 kg</span></div>
+        </div>
+        <div class="pg-field">
+          <label>Trade Corridor</label>
+          <select id="pg-corridor" onchange="runEngine()">
+            <option value="IN-EU">India → EU (ICS2 / TARIC)</option>
+            <option value="IN-US">India → US (CBP)</option>
+            <option value="CN-EU">China → EU (TARIC)</option>
+            <option value="SG-EU">Singapore → EU</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="pg-output" id="pg-output">
+        <div id="pg-lines"></div>
+        <div id="pg-verdict" class="pg-verdict pass">
+          <span id="pg-verdict-text">CLEARED</span>
+          <span class="conf" id="pg-conf">Confidence: 99.4%</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+
+
+  <!-- ══════════════════ § 6 STATS ══════════════════ -->
+  <div class="bp-stats">
+    <div class="stat" data-reveal>
+      <div class="num">99.4<span class="unit">%</span></div>
+      <div class="lbl">Extraction Confidence</div>
+    </div>
+    <div class="stat" data-reveal data-delay="1">
+      <div class="num">&lt;500<span class="unit">ms</span></div>
+      <div class="lbl">Document Ingestion</div>
+    </div>
+    <div class="stat" data-reveal data-delay="2">
+      <div class="num">47</div>
+      <div class="lbl">Rule Libraries</div>
+    </div>
+    <div class="stat" data-reveal data-delay="3">
+      <div class="num">12</div>
+      <div class="lbl">Trade Corridors</div>
+    </div>
+  </div>
+
+  <!-- ══════════════════ § 7 CLOSING CTA ══════════════════ -->
+  <section class="bp-ctaband-full" id="reserve">
+    <div class="ctaband-inner" data-reveal>
+      <p class="ctaband-eyebrow">Get Started</p>
+      <h2 class="ctaband-heading">Ready to ship smarter?</h2>
+      <p class="ctaband-sub">
+        Join freight teams already using CustomsCognita to eliminate compliance<br>
+        errors and move shipments faster than ever.
+      </p>
+      <div class="ctaband-btns">
+        <a href="#" class="ctabtn-primary"
+          onclick="document.querySelector('.email-form-inline input').focus();return false;">Start for free →</a>
+        <a href="#story" class="ctabtn-ghost">Learn more</a>
+      </div>
+      <form class="email-form-inline" onsubmit="handleSubmit(event)" style="margin-top:32px;">
+        <input type="email" placeholder="your@company.com" id="reserve-email" required>
+        <button type="submit">Request Corridor Access</button>
+      </form>
+      <p id="form-confirm"
+        style="margin-top:14px;font-size:12px;color:var(--green);opacity:0;transition:opacity 0.4s;letter-spacing:0.05em;">
+        ✓ Request received — we'll be in touch within 24 hours.
+      </p>
+    </div>
+  </section>
+
+  <!-- ══════════════════ FOOTER ══════════════════ -->
+  <footer class="bp-footer-full">
+    <div class="footer-top">
+      <div class="footer-brand-col">
+        <div class="footer-logo">
+          <svg width="18" height="18" viewBox="0 0 28 28" fill="none">
+            <circle cx="14" cy="14" r="4" fill="#00f0ff" />
+            <circle cx="14" cy="14" r="10" stroke="#00f0ff" stroke-width="1" opacity="0.35" />
+            <line x1="14" y1="2" x2="14" y2="8" stroke="#00f0ff" stroke-width="1.2" opacity="0.5" />
+            <line x1="14" y1="20" x2="14" y2="26" stroke="#00f0ff" stroke-width="1.2" opacity="0.5" />
+            <line x1="2" y1="14" x2="8" y2="14" stroke="#00f0ff" stroke-width="1.2" opacity="0.5" />
+            <line x1="20" y1="14" x2="26" y2="14" stroke="#00f0ff" stroke-width="1.2" opacity="0.5" />
+          </svg>
+          <span>CustomsCognita</span>
+        </div>
+        <p class="footer-tagline">Autonomous freight compliance.<br>Built for modern cross-border trade.</p>
+        <div class="footer-status">
+          <div class="dot-green"></div>
+          <span>All Systems Operational</span>
+          <span class="sep">·</span>
+          <span>ICS2 &amp; TARIC Feeds Live</span>
+        </div>
+      </div>
+      <div class="footer-links-wrap">
+        <div class="footer-col">
+          <h4>Product</h4>
+          <a href="#architecture">Features</a>
+          <a href="#engine">Rule Engine</a>
+          <a href="#engine">Demo</a>
+          <a href="#reserve">Console</a>
+        </div>
+        <div class="footer-col">
+          <h4>Company</h4>
+          <a href="#">About</a>
+          <a href="#">Journal</a>
+          <a href="#">Careers</a>
+          <a href="#">Press</a>
+        </div>
+        <div class="footer-col">
+          <h4>Support</h4>
+          <a href="#">Documentation</a>
+          <a href="#">API Reference</a>
+          <a href="#">Security</a>
+          <a href="#">Contact</a>
+        </div>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <p>© 2026 CustomsCognita. All rights reserved.</p>
+      <div class="footer-bottom-links">
+        <a href="#">Privacy Policy</a>
+        <a href="#">Terms of Service</a>
+        <a href="#">Cookie Preferences</a>
+      </div>
+    </div>
+  </footer>
+
+  <script>
+    /* ── Rule Playground Engine ── */
+    const RULES = {
+      "IN-EU": [
+        { id: "ICS2-001", label: "ICS2 Advance Notification", check: (d) => d.hsCode ? "pass" : "fail" },
+        { id: "TARIC-QTY", label: "Invoice ↔ Packing List Quantity Match", check: (d) => d.invQty === d.plQty ? "pass" : "fail" },
+        { id: "TARIC-VAL", label: "Declared Value Threshold (EUR 150)", check: (d) => d.value > 150 ? "pass" : "pass" },
+        { id: "HS-VALID", label: "HS Code Classification Validity", check: (d) => d.hsCode.length >= 7 ? "pass" : "warn" },
+        { id: "DUAL-USE", label: "Dual-Use Goods Screening", check: (d) => !["8471.30", "8708.99"].includes(d.hsCode) ? "pass" : "warn" },
+        { id: "WEIGHT-CHK", label: "Weight Plausibility (value/kg ratio)", check: (d) => (d.value / d.weight) < 5000 ? "pass" : "warn" },
+      ],
+      "IN-US": [
+        { id: "CBP-ISF", label: "ISF 10+2 Filing Completeness", check: (d) => d.value > 0 ? "pass" : "fail" },
+        { id: "CBP-QTY", label: "Quantity Reconciliation", check: (d) => d.invQty === d.plQty ? "pass" : "fail" },
+        { id: "HTS-CHECK", label: "HTS Tariff Classification", check: (d) => d.hsCode ? "pass" : "fail" },
+        { id: "PGA-SCREEN", label: "PGA Admissibility Screening", check: (d) => !["2204.21", "3004.90"].includes(d.hsCode) ? "pass" : "warn" },
+        { id: "VALUE-DBN", label: "Dutiable Value Declaration", check: (d) => d.value < 2500 ? "pass" : "pass" },
+      ],
+      "CN-EU": [
+        { id: "ICS2-001", label: "ICS2 Advance Notification", check: (d) => "pass" },
+        { id: "TARIC-QTY", label: "Quantity Reconciliation", check: (d) => d.invQty === d.plQty ? "pass" : "fail" },
+        { id: "ORIGIN-CN", label: "Rules of Origin Declaration", check: (d) => "pass" },
+        { id: "ANTI-DUMP", label: "Anti-Dumping Duty Screening", check: (d) => ["8471.30", "6403.99"].includes(d.hsCode) ? "warn" : "pass" },
+      ],
+      "SG-EU": [
+        { id: "ICS2-001", label: "ICS2 Advance Notification", check: (d) => "pass" },
+        { id: "TARIC-QTY", label: "Quantity Reconciliation", check: (d) => d.invQty === d.plQty ? "pass" : "fail" },
+        { id: "EUSFTA", label: "EU-Singapore FTA Preference Eligibility", check: (d) => "pass" },
+      ],
+    };
+
+    function runEngine() {
+      const invQty = parseInt(document.getElementById("pg-inv-qty").value) || 0;
+      const plQty = parseInt(document.getElementById("pg-pl-qty").value) || 0;
+      const value = parseFloat(document.getElementById("pg-value").value) || 0;
+      const hsCode = document.getElementById("pg-hs").value;
+      const weight = parseFloat(document.getElementById("pg-weight").value) || 1;
+      const corridor = document.getElementById("pg-corridor").value;
+
+      const data = { invQty, plQty, value, hsCode, weight };
+      const rules = RULES[corridor] || RULES["IN-EU"];
+
+      const lines = document.getElementById("pg-lines");
+      lines.innerHTML = "";
+
+      let fails = 0, warns = 0;
+      let confidence = 99.4;
+
+      rules.forEach((rule, i) => {
+        const result = rule.check(data);
+        if (result === "fail") { fails++; confidence -= 18; }
+        if (result === "warn") { warns++; confidence -= 4; }
+
+        const cls = result === "pass" ? "ok" : result === "warn" ? "warn" : "err";
+        const icon = result === "pass" ? "✓" : result === "warn" ? "⚠" : "✗";
+        const div = document.createElement("div");
+        div.className = "pg-line";
+        div.innerHTML = `<span class="${cls}">${icon} [${rule.id}]</span> <span class="dim">${rule.label}</span>`;
+        lines.appendChild(div);
+      });
+
+      confidence = Math.max(12, Math.min(99.4, confidence));
+
+      const vd = document.getElementById("pg-verdict");
+      const vt = document.getElementById("pg-verdict-text");
+      const vc = document.getElementById("pg-conf");
+
+      vd.className = "pg-verdict " + (fails > 0 ? "fail" : warns > 0 ? "warn" : "pass");
+      vt.textContent = fails > 0 ? `HOLD — ${fails} VIOLATION${fails > 1 ? "S" : ""}` : warns > 0 ? `REVIEW — ${warns} ADVISORY` : "CLEARED";
+      vc.textContent = `Confidence: ${confidence.toFixed(1)}%`;
+    }
+
+    function handleSubmit(e) {
+      e.preventDefault();
+      const el = document.getElementById("form-confirm");
+      el.style.opacity = "1";
+      document.getElementById("reserve-email").value = "";
+      setTimeout(() => { el.style.opacity = "0"; }, 5000);
+    }
+
+    /* ── Reveal on scroll ── */
+    const io = new IntersectionObserver(
+      (es) => es.forEach((e) => e.isIntersecting && e.target.classList.add("in")),
+      { threshold: 0.15 }
+    );
+    document.querySelectorAll("[data-reveal]").forEach((el) => io.observe(el));
+    const revealNow = () => document.querySelectorAll("[data-reveal]:not(.in)").forEach((el) => {
+      const r = el.getBoundingClientRect();
+      if (r.top < innerHeight * 0.92 && r.bottom > 0) el.classList.add("in");
+    });
+    addEventListener("scroll", revealNow, { passive: true });
+    revealNow();
+
+    /* ── Nav after film ── */
+    const nav = document.getElementById("brandnav");
+    const filmEnd = () => (document.getElementById("track")?.offsetHeight ?? innerHeight * 3) - innerHeight;
+    addEventListener("scroll", () => nav.classList.toggle("on", scrollY > filmEnd() * 0.94), { passive: true });
+
+    // Init playground
+    runEngine();
+  </script>
+
+  <script src="main.js"></script>
+</body>
+
+</html>
